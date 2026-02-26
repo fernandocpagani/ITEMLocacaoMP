@@ -1,7 +1,7 @@
+import 'package:core/Screens/Inicial/PaginaInicial.dart';
+import 'package:core/Screens/Login/LoginScreen.dart';
+import 'package:core/Services/auth_guard.dart';
 import 'package:go_router/go_router.dart';
-import 'package:itemloca/Pages/Inicial/PaginaInicial.dart';
-import 'package:itemloca/Pages/Login/LoginScreen.dart';
-import 'package:itemloca/Core/Services/auth_guard.dart';
 
 final appRouter = GoRouter(
   initialLocation: '/login',

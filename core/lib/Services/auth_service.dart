@@ -1,4 +1,4 @@
-import 'package:itemloca/Core/Services/ApiInterface.dart';
+import 'package:core/Services/ApiInterface.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class AuthServiceLogin {

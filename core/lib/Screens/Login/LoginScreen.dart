@@ -1,6 +1,6 @@
+import 'package:core/Services/ApiInterface.dart';
+import 'package:core/Services/auth_service.dart';
 import 'package:flutter/material.dart';
-import 'package:itemloca/Core/Services/ApiInterface.dart';
-import 'package:itemloca/Core/Services/auth_service.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
