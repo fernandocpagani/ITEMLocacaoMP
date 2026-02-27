@@ -1,25 +1,27 @@
 import 'package:core/Services/ApiInterface.dart';
 import 'package:core/Services/auth_service.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-class LoginScreen extends StatefulWidget {
-  const LoginScreen({super.key});
+class LoginScreenCliente extends StatefulWidget {
+  const LoginScreenCliente({super.key});
 
   @override
-  State<LoginScreen> createState() => _LoginScreenState();
+  State<LoginScreenCliente> createState() => _LoginScreenState();
 }
 
-class _LoginScreenState extends State<LoginScreen> {
+class _LoginScreenState extends State<LoginScreenCliente> {
+  final _storage = const FlutterSecureStorage();
   final _formKey = GlobalKey<FormState>();
-
   final _nucleusIdCtrl = TextEditingController();
   final _emailCtrl = TextEditingController();
   final _passwordCtrl = TextEditingController();
   late AuthServiceLogin authService;
   late ApiInterface apiService;
-
+  bool _loginMembro = true;
   bool _loading = false;
   bool _savePassword = false;
 
@@ -39,7 +41,7 @@ class _LoginScreenState extends State<LoginScreen> {
       if (_savePassword) {
         _nucleusIdCtrl.text = prefs.getString('nucleusId') ?? '';
         _emailCtrl.text = prefs.getString('email') ?? '';
-        _passwordCtrl.text = prefs.getString('password') ?? '';
+        _storage.write(key: 'password', value: _passwordCtrl.text);
       }
     });
   }
@@ -51,7 +53,6 @@ class _LoginScreenState extends State<LoginScreen> {
 
     try {
       final response = await authService.loginCustumer(_emailCtrl.text, _nucleusIdCtrl.text, _passwordCtrl.text);
-      print('response loginScreen ${response}');
       final prefs = await SharedPreferences.getInstance();
       if (_savePassword) {
         await prefs.setBool('savePassword', true);
@@ -61,7 +62,6 @@ class _LoginScreenState extends State<LoginScreen> {
       } else {
         await prefs.clear();
       }
-
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Login realizado com sucesso')));
     } catch (_) {
@@ -75,9 +75,7 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F7FA),
       body: Center(
         child: SingleChildScrollView(
           child: Container(
@@ -100,37 +98,46 @@ class _LoginScreenState extends State<LoginScreen> {
                     decoration: BoxDecoration(color: Colors.green.withOpacity(0.12), shape: BoxShape.circle),
                     child: const Icon(Icons.shopping_bag_outlined, color: Colors.green, size: 28),
                   ),
-
                   const SizedBox(height: 16),
-
-                  Text('Login Cliente', style: theme.textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold)),
-
-                  const SizedBox(height: 6),
-
+                  Text(_loginMembro ? 'Login membro' : 'Login cliente', style: theme.textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold)),
+                  const SizedBox(height: 8),
                   Text(
-                    'Acesse como cliente de um núcleo específico',
+                    _loginMembro ? 'Acesse o marketplace' : 'Acesse como cliente de um núcleo específico',
                     style: theme.textTheme.bodyMedium?.copyWith(color: Colors.grey[600]),
                     textAlign: TextAlign.center,
                   ),
-
-                  const SizedBox(height: 24),
-
-                  _input(controller: _nucleusIdCtrl, label: 'ID do Núcleo', hint: 'ID do núcleo'),
-
-                  const SizedBox(height: 12),
-
-                  _input(controller: _emailCtrl, label: 'E-mail', hint: 'email@exemplo.com', keyboard: TextInputType.emailAddress),
-
-                  const SizedBox(height: 12),
-
-                  _input(controller: _passwordCtrl, label: 'Senha', hint: 'Sua senha', obscure: true),
-
-                  const SizedBox(height: 8),
-
-                  SwitchListTile(value: _savePassword, onChanged: (v) => setState(() => _savePassword = v), contentPadding: EdgeInsets.zero, title: const Text('Salvar senha'), activeColor: Colors.green),
-
                   const SizedBox(height: 16),
-
+                  Align(
+                    alignment: Alignment.centerRight, // Joga para a direita
+                    child: TextButton(
+                      onPressed: () => setState(() => _loginMembro = !_loginMembro),
+                      style: TextButton.styleFrom(minimumSize: Size.zero, padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4), tapTargetSize: MaterialTapTargetSize.shrinkWrap),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min, // Faz a Row ocupar apenas o espaço necessário
+                        children: [
+                          Icon(Icons.change_circle, size: 18),
+                          const SizedBox(width: 8), // Pequeno espaço entre ícone e texto
+                          Text(_loginMembro ? 'Alterar para cliente' : 'Alterar para membro'),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                  _loginMembro
+                      ? SizedBox()
+                      : Column(
+                          children: [
+                            _input(controller: _nucleusIdCtrl, label: 'ID do Núcleo', hint: 'ID do núcleo'),
+                            const SizedBox(height: 16),
+                          ],
+                        ),
+                  _input(controller: _emailCtrl, label: 'E-mail', hint: 'email@exemplo.com', keyboard: TextInputType.emailAddress),
+                  const SizedBox(height: 16),
+                  _input(controller: _passwordCtrl, label: 'Senha', hint: 'Sua senha', obscure: true),
+                  const SizedBox(height: 8),
+                  SwitchListTile(value: _savePassword, onChanged: (v) => setState(() => _savePassword = v), contentPadding: EdgeInsets.zero, title: const Text('Salvar senha'), activeColor: Colors.green),
+                  const SizedBox(height: 16),
+                  ElevatedButton(onPressed: () => context.go('/marketplace'), child: const Text('Entrar')),
                   SizedBox(
                     width: double.infinity,
                     height: 48,
@@ -142,15 +149,6 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                       child: _loading ? const SizedBox(width: 22, height: 22, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white)) : const Text('Entrar'),
                     ),
-                  ),
-
-                  const SizedBox(height: 20),
-
-                  TextButton.icon(
-                    onPressed: () => Navigator.pop(context),
-                    icon: const Icon(Icons.arrow_back, size: 18),
-                    label: const Text('Voltar'),
-                    style: TextButton.styleFrom(foregroundColor: Colors.green),
                   ),
                 ],
               ),
@@ -166,7 +164,7 @@ class _LoginScreenState extends State<LoginScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(label, style: const TextStyle(fontWeight: FontWeight.w500)),
-        const SizedBox(height: 6),
+        const SizedBox(height: 8),
         TextFormField(
           controller: controller,
           obscureText: obscure,
